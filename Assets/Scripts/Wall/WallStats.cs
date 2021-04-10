@@ -1,11 +1,8 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
-public class EnemyStats : MonoBehaviour
+public class WallStats : MonoBehaviour
 {
     public float health, maxHealth;
-
-    public float hitPoints;
     
     private void Start()
     {

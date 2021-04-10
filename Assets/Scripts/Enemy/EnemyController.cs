@@ -4,10 +4,14 @@ using UnityEngine.AI;
 
 public class EnemyController : MonoBehaviour
 {
-    private NavMeshAgent _agent;
-    private Collider _chasing;
+    public float giveHitInterval;
     
-    private bool _shouldSearch = true;
+    private NavMeshAgent _agent;
+    private Collider _chasing, _oldChasing = null;
+    
+    private bool _shouldSearch = true, _shouldAttack;
+
+    private EnemyStats _myStats;
     
     //attack
     //pick new box, repeat
@@ -15,10 +19,18 @@ public class EnemyController : MonoBehaviour
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
+        _myStats = GetComponent<EnemyStats>();
         
         var list = GameObject.FindGameObjectsWithTag("Wall");
 
         _agent.SetDestination(list[4].transform.position);
+    }
+
+    private void Update()
+    {
+        if(!_agent.isStopped)
+            if(_chasing == null && !_shouldSearch)
+                ForceTriggerCheck();
     }
 
     private void OnCollisionEnter(Collision other)
@@ -26,6 +38,7 @@ public class EnemyController : MonoBehaviour
         if(other.collider != _chasing) return;
 
         _agent.isStopped = true;
+        _shouldAttack = true;
         StartCoroutine(Attack());
     }
 
@@ -35,14 +48,42 @@ public class EnemyController : MonoBehaviour
         if(!other.CompareTag("Wall")) return;
         
         _shouldSearch = false;
-        _agent.SetDestination(other.transform.parent.GetChild(other.transform.parent.childCount - 1).position);
+        _oldChasing = _chasing;
         _chasing = other.transform.parent.GetChild(other.transform.parent.childCount - 1).GetComponent<Collider>();
-        Debug.Log(other.name, other.gameObject);
+
+        if (_chasing == _oldChasing && _chasing.transform.parent.childCount > 0)
+            _shouldSearch = true;
+                
+        _agent.isStopped = false;
+        _agent.SetDestination(_chasing.transform.position);
+        Debug.Log("set to " + _chasing.name, _chasing);
     }
 
     private IEnumerator Attack()
     {
-        print("Start attacking");
-        yield break;
+        while (_shouldAttack)
+        {
+            if(!ReferenceEquals(_chasing, null))
+            {
+                if (_chasing.GetComponent<WallController>().TakeHit(_myStats.hitPoints) > 0)
+                    yield return new WaitForSeconds(giveHitInterval);
+                else
+                    _shouldAttack = false;
+            }
+            else
+            {
+                _shouldAttack = false;
+            }
+        }
+        _shouldSearch = true;
+        ForceTriggerCheck();
+    }
+
+    private void ForceTriggerCheck()
+    {
+        print("force recheck");
+        _shouldSearch = true;
+        foreach(var c in  Physics.OverlapSphere(transform.position, 7f))
+            gameObject.SendMessage("OnTriggerEnter", c);
     }
 }
