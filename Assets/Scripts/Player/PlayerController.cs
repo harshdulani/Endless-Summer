@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.Serialization;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Me;
     public float takeDamageInterval, giveDamageInterval;
 
     private HealthCanvasController _healthCanvas;
@@ -16,13 +16,25 @@ public class PlayerController : MonoBehaviour
 
     private RaycastHit _hit;
     private Vector3 _desiredMovementDirection;
-    private bool _rotatingToPosition;
+    private bool _rotatingToPosition, _isRepairing;
+    private int _enemyMask, _wallMask;
+
+    private void Awake()
+    {
+        if (!Me)
+            Me = this;
+        else 
+            Destroy(this);
+    }
 
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
         _healthCanvas = GetComponentInChildren<HealthCanvasController>();
         _cam = Camera.main;
+
+        _enemyMask = LayerMask.GetMask("Enemy", "Default");
+        _wallMask = LayerMask.GetMask("BrokenWall", "Default");
     }
 
     private void Update()
@@ -30,15 +42,20 @@ public class PlayerController : MonoBehaviour
         if (LitmusTest.Paper.litDay && DayNightCycle.isDayActiveLight)
         {
             //calculate damage per sec based on distance from sun
-            print("hit by sun");
+            //print("hit by sun");
             ChangeHealth(PlayerStats.stats.takeDPS);
         }
         else if (LitmusTest.Paper.litNight && DayNightCycle.isNightActiveLight)
         {
-            print("hit by moon");
+            //print("hit by moon");
             ChangeHealth(PlayerStats.stats.takeDPS);
         }
 
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            _isRepairing = !_isRepairing;
+        }
+        
         _elapsedTimefromHitting += Time.deltaTime;
         if (Input.GetButton("Fire1"))
         {
@@ -49,8 +66,11 @@ public class PlayerController : MonoBehaviour
                 _position = hit.point;
 
             _rotatingToPosition = true;
-            
-            GiveAttack();
+
+            if (_isRepairing)
+                Repair();
+            else
+                GiveAttack();
         }
         if (Input.GetButtonUp("Fire2"))
         {
@@ -90,13 +110,31 @@ public class PlayerController : MonoBehaviour
     {
         if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
         
-        Physics.Raycast(transform.position, transform.forward, out _hit);
-        
+        Physics.Raycast(new Ray(transform.position, transform.forward), out _hit, 10f, _enemyMask);
+
         if(ReferenceEquals(_hit.collider, null)) return;
-
+        
         if(_hit.collider.gameObject.CompareTag("Enemy"))
+        {
             _hit.collider.GetComponent<EnemyController>().ChangeHealth(PlayerStats.stats.hitPoints);
+        }
+        _elapsedTimefromHitting = 0f;
+    }
 
+    private void Repair()
+    {
+        if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
+        
+        Physics.Raycast(new Ray(transform.position, transform.forward), out _hit, 10f, _wallMask);
+
+        if(ReferenceEquals(_hit.collider.gameObject, null)) return;
+        
+        var x = _hit.collider.gameObject;
+        Debug.Log(x.name, x);
+        if(x.CompareTag("Wall"))
+        {
+            x.GetComponent<WallController>().Repair(PlayerStats.stats.repairHitPoints);
+        }
         _elapsedTimefromHitting = 0f;
     }
     
@@ -106,6 +144,7 @@ public class PlayerController : MonoBehaviour
 
         _desiredMovementDirection.y = 0f;
 
-        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(_desiredMovementDirection), 0.2f);
+        if(_desiredMovementDirection != Vector3.zero)
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(_desiredMovementDirection), 0.2f);
     }
 }

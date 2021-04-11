@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -49,13 +50,22 @@ public class EnemyController : MonoBehaviour
         
         _shouldSearch = false;
         _oldChasing = _chasing;
-        _chasing = other.transform.parent.GetChild(other.transform.parent.childCount - 1).GetComponent<Collider>();
 
-        if (_chasing == _oldChasing && _chasing.transform.parent.childCount > 0)
+        try
+        {
+            var parent = other.transform.parent;
+            _chasing = parent.GetChild(parent.childCount - 1).GetComponent<Collider>();
+
+            if (_chasing == _oldChasing && _chasing.transform.parent.childCount > 0)
+                _shouldSearch = true;
+
+            _agent.isStopped = false;
+            _agent.SetDestination(_chasing.transform.position);
+        }
+        catch (Exception e)
+        {
             _shouldSearch = true;
-                
-        _agent.isStopped = false;
-        _agent.SetDestination(_chasing.transform.position);
+        }
     }
 
     private IEnumerator Attack()
@@ -64,7 +74,7 @@ public class EnemyController : MonoBehaviour
         {
             if(!ReferenceEquals(_chasing, null))
             {
-                if (_chasing.GetComponent<WallController>().TakeHit(_myStats.hitPoints) > 0)
+                if (_chasing.GetComponent<WallController>().TakeDamage(_myStats.hitPoints) > 0)
                     yield return new WaitForSeconds(giveHitInterval);
                 else
                     _shouldAttack = false;

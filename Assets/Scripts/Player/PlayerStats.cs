@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class PlayerStats : MonoBehaviour
@@ -7,7 +6,7 @@ public class PlayerStats : MonoBehaviour
     
     public float health, maxHealth;
 
-    public float hitPoints, takeDPS;
+    public float hitPoints, takeDPS, repairHitPoints;
 
     private void Awake()
     {
