@@ -97,6 +97,7 @@ public class EnemyController : MonoBehaviour
 
     public void ChangeHealth(float amt)
     {
+        print("taking damage");
         _myStats.health -= amt;
         
         _healthCanvas.UpdateHealthBar(_myStats.health, _myStats.maxHealth);

@@ -47,7 +47,12 @@ public class WallController : MonoBehaviour
 
     private void Phoenix()
     {
-        var newWall = Instantiate(_myStats.isBroken ? brokenBox : normalBox, transform.position, Quaternion.identity);
+        var box = _myStats.isBroken ? brokenBox : normalBox;
+
+        var newPos = transform.position;
+        newPos.y = box.transform.position.y;
+        
+        var newWall = Instantiate(box, newPos, Quaternion.identity);
         newWall.transform.parent = transform.parent;
         Destroy(gameObject);
     }

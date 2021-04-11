@@ -7,8 +7,10 @@ public class PlayerController : MonoBehaviour
     public static PlayerController Me;
     public float takeDamageInterval, giveDamageInterval;
 
-    [Header("Laser")]
-    public LineRenderer line;
+    [Header("Lasers")] public LineRenderer[] attackLasers;
+    public LineRenderer[] repairLasers;
+
+    private LineRenderer _lineLeft, _lineRight;
     private Transform _hitTrans = null;
 
     private HealthCanvasController _healthCanvas;
@@ -37,9 +39,12 @@ public class PlayerController : MonoBehaviour
         _agent = GetComponent<NavMeshAgent>();
         _healthCanvas = GetComponentInChildren<HealthCanvasController>();
         _cam = Camera.main;
-
-        _enemyMask = LayerMask.GetMask("Enemy", "Default");
-        _wallMask = LayerMask.GetMask("BrokenWall", "Default");
+        
+        _lineLeft = attackLasers[0];
+        _lineRight = attackLasers[1];
+        
+        _enemyMask = LayerMask.GetMask("Default", "Enemy");
+        _wallMask = LayerMask.GetMask( "Default", "BrokenWall");
     }
 
     private void Update()
@@ -60,33 +65,54 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.X))
         {
             _isRepairing = !_isRepairing;
+
+            _lineLeft.enabled = false;
+            _lineRight.enabled = false;
+            if (_isRepairing)
+            {
+                _lineLeft = repairLasers[0];
+                _lineRight = repairLasers[1];
+            }
+            else
+            {
+                _lineLeft = attackLasers[0];
+                _lineRight = attackLasers[1];
+            }
         }
 
         try
         {
             if (!ReferenceEquals(_hitTrans, null))
             {
-                line.material = line.materials[_isRepairing ? 1 : 0];
-                
                 if (_elapsedTimefromHitting <= giveDamageInterval)
                 {
-                    line.enabled = true;
-                    line.positionCount = 2;
-                    line.SetPosition(0, line.transform.position);
-                    line.SetPosition(1, _hitTrans.position);
+                    _lineLeft.enabled = true;
+                    _lineLeft.positionCount = 2;
+                    _lineLeft.SetPosition(0, _lineLeft.transform.position);
+                    _lineLeft.SetPosition(1, _hitTrans.position);
+                    
+                    _lineRight.enabled = true;
+                    _lineRight.positionCount = 2;
+                    _lineRight.SetPosition(0, _lineRight.transform.position);
+                    _lineRight.SetPosition(1, _hitTrans.position);
                     _position = _hitTrans.position;
+                    
                     _rotatingToPosition = true;
                 }
             }
         }
         catch (Exception e)
         {
-            line.enabled = false;
+            _lineLeft.enabled = false;
+            _lineRight.enabled = false;
             _hitTrans = null;
         }
 
         if (_elapsedTimefromHitting > giveDamageInterval)
-            line.enabled = false;
+        {
+            _lineLeft.enabled = false;
+            _lineRight.enabled = false;
+        }
         
         _elapsedTimefromHitting += Time.deltaTime;
         if (Input.GetButton("Fire1"))
@@ -152,8 +178,8 @@ public class PlayerController : MonoBehaviour
         {
             _hit.collider.GetComponent<EnemyController>().ChangeHealth(PlayerStats.stats.hitPoints);
             _hitTrans = _hit.transform;
+            _elapsedTimefromHitting = 0f;
         }
-        _elapsedTimefromHitting = 0f;
     }
 
     private void Repair()

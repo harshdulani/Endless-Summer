@@ -74,6 +74,8 @@ public class MainMenuController : MonoBehaviour
         scoreGame.enabled = false;
         blackBG.SetActive(true);
         gameOver.SetActive(true);
+
+        GameController.game.shouldSpawn = false;
         if(GameController.score > 1)
             scoreDeath.text = "You lasted just " + GameController.score + " days of summer.";
 

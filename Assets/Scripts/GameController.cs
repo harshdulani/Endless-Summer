@@ -17,7 +17,7 @@ public class GameController : MonoBehaviour
     public int enemiesOnScreen, maxEnemiesOnScreen;
     public float enemySpawnInterval;
     
-    private bool _shouldSpawn;
+    public bool shouldSpawn;
 
     private WaitForSeconds _spawnWait;
 
@@ -36,7 +36,7 @@ public class GameController : MonoBehaviour
 
     public void StartGameplay()
     {
-        _shouldSpawn = true;
+        shouldSpawn = true;
         hasGameStarted = true;
         StartCoroutine(SpawnEnemies());
         
@@ -48,7 +48,7 @@ public class GameController : MonoBehaviour
 
     private IEnumerator SpawnEnemies()
     {
-        while (_shouldSpawn)
+        while (shouldSpawn)
         {
             if (enemiesOnScreen < maxEnemiesOnScreen)
                 SpawnEnemy();
