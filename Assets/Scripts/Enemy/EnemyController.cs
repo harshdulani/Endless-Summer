@@ -10,16 +10,16 @@ public class EnemyController : MonoBehaviour
     private Collider _chasing, _oldChasing = null;
     
     private bool _shouldSearch = true, _shouldAttack;
-
-    private EnemyStats _myStats;
     
-    //attack
-    //pick new box, repeat
-
+    private EnemyStats _myStats;
+    private HealthCanvasController _healthCanvas;
+    
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
         _myStats = GetComponent<EnemyStats>();
+        
+        _healthCanvas = GetComponentInChildren<HealthCanvasController>();
         
         var list = GameObject.FindGameObjectsWithTag("Wall");
 
@@ -28,9 +28,9 @@ public class EnemyController : MonoBehaviour
 
     private void Update()
     {
-        if(!_agent.isStopped)
-            if(_chasing == null && !_shouldSearch)
-                ForceTriggerCheck();
+        if (_agent.isStopped) return;
+        if(ReferenceEquals(_chasing, null) && !_shouldSearch)
+            ForceTriggerCheck();
     }
 
     private void OnCollisionEnter(Collision other)
@@ -83,5 +83,17 @@ public class EnemyController : MonoBehaviour
         _shouldSearch = true;
         foreach(var c in  Physics.OverlapSphere(transform.position, 7f))
             gameObject.SendMessage("OnTriggerEnter", c);
+    }
+
+    public void ChangeHealth(float amt)
+    {
+        _myStats.health -= amt;
+        
+        _healthCanvas.UpdateHealthBar(_myStats.health, _myStats.maxHealth);
+
+        if (_myStats.health > 0f) return;
+        
+        _agent.isStopped = true;
+        Destroy(gameObject, 0.75f);
     }
 }
