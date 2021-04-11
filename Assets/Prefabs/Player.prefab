@@ -23,7 +23,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1928146010495985460
 Transform:
   m_ObjectHideFlags: 0
@@ -188,8 +188,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   takeDamageInterval: 0.35
-  giveDamageInterval: 1
-  line: {fileID: 1928146011072502587}
+  giveDamageInterval: 0.5
+  attackLasers: []
+  repairLasers: []
 --- !u!1 &1928146010745262185
 GameObject:
   m_ObjectHideFlags: 0

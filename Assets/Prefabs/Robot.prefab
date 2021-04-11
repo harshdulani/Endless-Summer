@@ -1030,7 +1030,7 @@ MonoBehaviour:
   maxHealth: 100
   hitPoints: 35
   takeDPS: 2
-  repairHitPoints: 20
+  repairHitPoints: 50
 --- !u!1 &6559473399677341606
 GameObject:
   m_ObjectHideFlags: 0

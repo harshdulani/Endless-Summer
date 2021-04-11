@@ -33,7 +33,6 @@ public class EnemyController : MonoBehaviour
         if (_shouldSearch)
         {
             StartCoroutine(FindWall());
-            Debug.Log(gameObject.name + "'s Status for wall search", _chasing);
         }
     }
 

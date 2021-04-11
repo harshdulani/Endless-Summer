@@ -39,12 +39,12 @@ public class PlayerController : MonoBehaviour
         _agent = GetComponent<NavMeshAgent>();
         _healthCanvas = GetComponentInChildren<HealthCanvasController>();
         _cam = Camera.main;
-        
+
         _lineLeft = attackLasers[0];
         _lineRight = attackLasers[1];
         
         _enemyMask = LayerMask.GetMask("Default", "Enemy");
-        _wallMask = LayerMask.GetMask( "Default", "BrokenWall");
+        _wallMask = LayerMask.GetMask( "Default", "Wall");
     }
 
     private void Update()
@@ -64,25 +64,12 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.X))
         {
-            _isRepairing = !_isRepairing;
-
-            _lineLeft.enabled = false;
-            _lineRight.enabled = false;
-            if (_isRepairing)
-            {
-                _lineLeft = repairLasers[0];
-                _lineRight = repairLasers[1];
-            }
-            else
-            {
-                _lineLeft = attackLasers[0];
-                _lineRight = attackLasers[1];
-            }
+            ToggleAttackRepair();
         }
 
         try
         {
-            if (!ReferenceEquals(_hitTrans, null))
+            if (_hitTrans != null)
             {
                 if (_elapsedTimefromHitting <= giveDamageInterval)
                 {
@@ -115,28 +102,54 @@ public class PlayerController : MonoBehaviour
         }
         
         _elapsedTimefromHitting += Time.deltaTime;
-        if (Input.GetButton("Fire1"))
+        if (Input.GetButton("Fire2"))
         {
+            // target
             // Reset ray with new mouse position
             _ray = _cam.ScreenPointToRay(Input.mousePosition);
 
-            foreach (var hit in Physics.RaycastAll(_ray))
-                _position = hit.point;
-
+            foreach (var hit in Physics.RaycastAll(_ray, 50f))
+            {
+                if(_isRepairing)
+                {
+                    if (hit.collider.gameObject.CompareTag("BrokenWall"))
+                    {
+                        _position = hit.point;
+                        _hit = hit;
+                    }
+                }
+                else
+                {
+                    if (hit.collider.gameObject.CompareTag("Enemy"))
+                    {
+                        _position = hit.point;
+                        _hit = hit;
+                    }
+                }
+            }
+            
+            _position.y = 0.5f;
+            
             _rotatingToPosition = true;
 
-            if (_isRepairing)
-                Repair();
-            else
-                Attack();
+            if(_hit.collider != null)
+            {
+                if (_isRepairing)
+                    Repair();
+                else
+                    Attack();
+            }
         }
-        if (Input.GetButtonUp("Fire2"))
+        if (Input.GetButtonUp("Fire1"))
         {
+            //movement
             // Reset ray with new mouse position
             _ray = _cam.ScreenPointToRay(Input.mousePosition);
 
-            foreach (var hit in Physics.RaycastAll(_ray))
+            foreach (var hit in Physics.RaycastAll(_ray, 20f))
                 _position = hit.point;
+
+            _position.y = 0.5f;
 
             _agent.SetDestination(_position);
         }
@@ -147,6 +160,118 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void Attack()
+    {
+        if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
+
+        if (!_hit.collider.gameObject.CompareTag("Enemy")) return;
+
+        int foundWallAt = 0;
+        int foundEnemyAt = 0;
+        int i = 0;
+
+        var _rayStartPos = transform.position;
+        _rayStartPos.y = 0.5f;
+
+        var direction = _position - transform.position;
+        
+        Debug.DrawRay(_rayStartPos, direction, Color.red, 2f);
+
+        foreach (var hit in Physics.RaycastAll(_rayStartPos, direction, 20f))
+        {
+            i++;
+            if (hit.collider.gameObject.CompareTag("Wall"))
+            {
+                Debug.Log("i", hit.collider);
+                foundWallAt = i;
+            }
+            if (hit.collider.gameObject.CompareTag("Enemy"))
+            {
+                foundEnemyAt = i;
+            }
+            if (foundEnemyAt != foundWallAt)
+                break;
+        }
+        
+        print(foundEnemyAt + " " + foundWallAt);
+
+        if(foundEnemyAt == 0) return;
+        if(foundEnemyAt > foundWallAt && foundWallAt > 0) return;
+        
+        if (_hit.collider.GetComponent<EnemyController>().ChangeHealth(PlayerStats.stats.hitPoints) <= 0)
+        {
+            _hitTrans = null;
+        }
+        _hitTrans = _hit.transform;
+        _elapsedTimefromHitting = 0f;
+    }
+
+    private void Repair()
+    {
+        if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
+
+        var x = _hit.collider.gameObject;
+        
+        int foundWallAt = 0;
+        int foundEnemyAt = 0;
+        int i = 0;
+
+        var _rayStartPos = transform.position;
+        _rayStartPos.y = 0.5f;
+
+        var direction = _position - transform.position;
+        
+        Debug.DrawRay(_rayStartPos, direction, Color.red, 2f);
+
+        foreach (var hit in Physics.RaycastAll(_rayStartPos, direction, 20f))
+        {
+            i++;
+            if (hit.collider.gameObject.CompareTag("Wall"))
+            {
+                Debug.Log("i", hit.collider);
+                foundWallAt = i;
+            }
+            if (hit.collider.gameObject.CompareTag("Enemy"))
+            {
+                foundEnemyAt = i;
+            }
+            if (foundEnemyAt != foundWallAt)
+                break;
+        }
+        
+        print(foundEnemyAt + " " + foundWallAt);
+
+        if(foundEnemyAt == 0) return;
+        if(foundEnemyAt < foundWallAt && foundEnemyAt > 0) return;
+
+        
+        if (x.CompareTag("BrokenWall"))
+        {
+            x.GetComponent<WallController>().Repair(PlayerStats.stats.repairHitPoints);
+            _hitTrans = x.transform;
+        }
+
+        _elapsedTimefromHitting = 0f;
+    }
+
+    private void ToggleAttackRepair()
+    {
+        _isRepairing = !_isRepairing;
+
+        _lineLeft.enabled = false;
+        _lineRight.enabled = false;
+        if (_isRepairing)
+        {
+            _lineLeft = repairLasers[0];
+            _lineRight = repairLasers[1];
+        }
+        else
+        {
+            _lineLeft = attackLasers[0];
+            _lineRight = attackLasers[1];
+        }
+    }
+    
     private void ChangeHealth(float amt)
     {
         _elapsedTimeFromDamage += Time.deltaTime;
@@ -164,47 +289,6 @@ public class PlayerController : MonoBehaviour
         
         MainMenuController.menu.ShowGameOver();
         Destroy(gameObject, 0.75f);
-    }
-
-    private void Attack()
-    {
-        if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
-        
-        Physics.Raycast(new Ray(transform.position, transform.forward), out _hit, 10f, _enemyMask);
-
-        if(ReferenceEquals(_hit.collider, null)) return;
-        
-        if(_hit.collider.gameObject.CompareTag("Enemy"))
-        {
-            _hit.collider.GetComponent<EnemyController>().ChangeHealth(PlayerStats.stats.hitPoints);
-            _hitTrans = _hit.transform;
-            _elapsedTimefromHitting = 0f;
-        }
-    }
-
-    private void Repair()
-    {
-        if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
-        
-        Physics.Raycast(new Ray(transform.position, transform.forward), out _hit, 10f, _wallMask);
-
-        try
-        {
-            var x = _hit.collider.gameObject;
-            if (ReferenceEquals(x, null)) return;
-
-            if (x.CompareTag("Wall"))
-            {
-                x.GetComponent<WallController>().Repair(PlayerStats.stats.repairHitPoints);
-                _hitTrans = x.transform;
-            }
-
-            _elapsedTimefromHitting = 0f;
-        }
-        catch
-        {
-            print("didnt find box to repair");
-        }
     }
     
     private void Rotate(Vector3 position)

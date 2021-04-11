@@ -6,6 +6,8 @@ TagManager:
   tags:
   - Wall
   - Enemy
+  - WallParent
+  - BrokenWall
   layers:
   - Default
   - TransparentFX
@@ -16,8 +18,8 @@ TagManager:
   - SunMoon
   - BrokenWall
   - Enemy
-  - 
-  - 
+  - Ground
+  - Wall
   - 
   - 
   - 
