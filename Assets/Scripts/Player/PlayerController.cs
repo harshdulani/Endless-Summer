@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     public float takeDamageEvery;
     
+    private HealthCanvasController _healthCanvas;
     private NavMeshAgent _agent;
     private Ray _ray;
     private Camera _cam;
@@ -15,6 +16,7 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
+        _healthCanvas = GetComponentInChildren<HealthCanvasController>();
         _cam = Camera.main;
     }
 
@@ -46,10 +48,11 @@ public class PlayerController : MonoBehaviour
     {
         _elapsedTimeFromDamage += Time.deltaTime;
 
-        if (_elapsedTimeFromDamage >= takeDamageEvery)
-        {
-            PlayerStats.stats.health -= amt;
-            _elapsedTimeFromDamage = 0f;
-        }
+        if (!(_elapsedTimeFromDamage >= takeDamageEvery)) return;
+        
+        PlayerStats.stats.health -= amt;
+        _elapsedTimeFromDamage = 0f;
+        
+        _healthCanvas.UpdateHealthBar(PlayerStats.stats.health, PlayerStats.stats.maxHealth);
     }
 }
