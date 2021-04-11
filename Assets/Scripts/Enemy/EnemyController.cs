@@ -56,7 +56,6 @@ public class EnemyController : MonoBehaviour
                 
         _agent.isStopped = false;
         _agent.SetDestination(_chasing.transform.position);
-        Debug.Log("set to " + _chasing.name, _chasing);
     }
 
     private IEnumerator Attack()
@@ -81,7 +80,6 @@ public class EnemyController : MonoBehaviour
 
     private void ForceTriggerCheck()
     {
-        print("force recheck");
         _shouldSearch = true;
         foreach(var c in  Physics.OverlapSphere(transform.position, 7f))
             gameObject.SendMessage("OnTriggerEnter", c);

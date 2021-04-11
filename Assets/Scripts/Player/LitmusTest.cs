@@ -1,7 +1,18 @@
+using System;
 using UnityEngine;
 
 public class LitmusTest : MonoBehaviour
 {
+    public static LitmusTest Paper;
+
+    private void Awake()
+    {
+        if (Paper == null)
+            Paper = this;
+        else
+            Destroy(this);
+    }
+
     public Transform nightLight, dayLight;
     
     public bool litNight;
