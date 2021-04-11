@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -5,6 +6,10 @@ public class PlayerController : MonoBehaviour
 {
     public static PlayerController Me;
     public float takeDamageInterval, giveDamageInterval;
+
+    [Header("Laser")]
+    public LineRenderer line;
+    private Transform _hitTrans = null;
 
     private HealthCanvasController _healthCanvas;
     private NavMeshAgent _agent;
@@ -55,6 +60,30 @@ public class PlayerController : MonoBehaviour
         {
             _isRepairing = !_isRepairing;
         }
+
+        try
+        {
+            if (!ReferenceEquals(_hitTrans, null))
+            {
+                if (_elapsedTimefromHitting <= giveDamageInterval)
+                {
+                    line.enabled = true;
+                    line.positionCount = 2;
+                    line.SetPosition(0, line.transform.position);
+                    line.SetPosition(1, _hitTrans.position);
+                    _position = _hitTrans.position;
+                    _rotatingToPosition = true;
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            line.enabled = false;
+            _hitTrans = null;
+        }
+
+        if (_elapsedTimefromHitting > giveDamageInterval)
+            line.enabled = false;
         
         _elapsedTimefromHitting += Time.deltaTime;
         if (Input.GetButton("Fire1"))
@@ -70,7 +99,7 @@ public class PlayerController : MonoBehaviour
             if (_isRepairing)
                 Repair();
             else
-                GiveAttack();
+                Attack();
         }
         if (Input.GetButtonUp("Fire2"))
         {
@@ -106,7 +135,7 @@ public class PlayerController : MonoBehaviour
         Destroy(gameObject, 0.75f);
     }
 
-    private void GiveAttack()
+    private void Attack()
     {
         if (!(_elapsedTimefromHitting >= giveDamageInterval)) return;
         
@@ -117,6 +146,7 @@ public class PlayerController : MonoBehaviour
         if(_hit.collider.gameObject.CompareTag("Enemy"))
         {
             _hit.collider.GetComponent<EnemyController>().ChangeHealth(PlayerStats.stats.hitPoints);
+            _hitTrans = _hit.transform;
         }
         _elapsedTimefromHitting = 0f;
     }
