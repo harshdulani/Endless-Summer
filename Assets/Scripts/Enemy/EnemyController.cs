@@ -6,14 +6,17 @@ using UnityEngine.AI;
 public class EnemyController : MonoBehaviour
 {
     public float giveHitInterval;
+
+    private Collider _chasing;
+    
+    private Vector3 _chasePos = Vector3.zero;
+    private bool _shouldSearch, _isAttacking;
     
     private NavMeshAgent _agent;
-    private Collider _chasing, _oldChasing = null;
-    
-    private bool _shouldSearch = true, _shouldAttack;
-    
     private EnemyStats _myStats;
     private HealthCanvasController _healthCanvas;
+
+    private WaitForSeconds _waitLoop = new WaitForSeconds(0.01f);
     
     private void Start()
     {
@@ -21,90 +24,97 @@ public class EnemyController : MonoBehaviour
         _myStats = GetComponent<EnemyStats>();
         
         _healthCanvas = GetComponentInChildren<HealthCanvasController>();
-        
-        var list = GameObject.FindGameObjectsWithTag("Wall");
 
-        _agent.SetDestination(list[4].transform.position);
+        StartCoroutine(FindWall());
     }
 
     private void Update()
     {
-        if (_agent.isStopped) return;
-        if(ReferenceEquals(_chasing, null) && !_shouldSearch)
-            ForceTriggerCheck();
+        if (_shouldSearch)
+        {
+            StartCoroutine(FindWall());
+            Debug.Log(gameObject.name + "'s Status for wall search", _chasing);
+        }
     }
 
     private void OnCollisionEnter(Collision other)
     {
-        if(other.collider != _chasing) return;
+        if (other.collider != _chasing)
+            return;
 
         _agent.isStopped = true;
-        _shouldAttack = true;
+        _isAttacking = true;
         StartCoroutine(Attack());
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if(!_shouldSearch) return;
-        if(!other.CompareTag("Wall")) return;
-        
-        _shouldSearch = false;
-        _oldChasing = _chasing;
-
-        try
-        {
-            var parent = other.transform.parent;
-            _chasing = parent.GetChild(parent.childCount - 1).GetComponent<Collider>();
-
-            if (_chasing == _oldChasing && _chasing.transform.parent.childCount > 0)
-                _shouldSearch = true;
-
-            _agent.isStopped = false;
-            _agent.SetDestination(_chasing.transform.position);
-        }
-        catch (Exception e)
-        {
-            _shouldSearch = true;
-        }
     }
 
     private IEnumerator Attack()
     {
-        while (_shouldAttack)
+        while (_isAttacking)
         {
-            if(!ReferenceEquals(_chasing, null))
+            if(_chasing != null)
             {
                 if (_chasing.GetComponent<WallController>().TakeDamage(_myStats.hitPoints) > 0)
                     yield return new WaitForSeconds(giveHitInterval);
                 else
-                    _shouldAttack = false;
+                    _isAttacking = false;
             }
             else
             {
-                _shouldAttack = false;
+                _isAttacking = false;
             }
         }
         _shouldSearch = true;
-        ForceTriggerCheck();
     }
 
-    private void ForceTriggerCheck()
-    {
-        _shouldSearch = true;
-        foreach(var c in  Physics.OverlapSphere(transform.position, 7f))
-            gameObject.SendMessage("OnTriggerEnter", c);
-    }
-
-    public void ChangeHealth(float amt)
+    public float ChangeHealth(float amt)
     {
         print("taking damage");
         _myStats.health -= amt;
         
         _healthCanvas.UpdateHealthBar(_myStats.health, _myStats.maxHealth);
 
-        if (_myStats.health > 0f) return;
+        if (_myStats.health > 0f) return _myStats.health;
         
         _agent.isStopped = true;
-        Destroy(gameObject, 0.75f);
+        Destroy(gameObject, 0.25f);
+        return _myStats.health;
+    }
+    
+    private IEnumerator FindWall()
+    {
+        _shouldSearch = false;
+        foreach (var parent in GameObject.FindGameObjectsWithTag("WallParent"))
+        {
+            if (!parent.name.Equals("Wall (" + _myStats.spawnPointIndex + ")")) continue;
+
+            var boxIndex = parent.transform.childCount - 1;
+            Transform currBox = null;
+
+            while (boxIndex >= 0)
+            {
+                //take a break
+                yield return _waitLoop;
+                
+                currBox = parent.transform.GetChild(boxIndex);
+                if (currBox.GetComponent<WallStats>().isBroken)
+                    boxIndex--;
+                else
+                    break;
+            }
+
+            if (currBox != null)
+            {
+                _chasePos = currBox.position;
+                _agent.SetDestination(_chasePos);
+                _agent.isStopped = false;
+                _chasing = currBox.GetComponent<Collider>();
+            }
+
+            //take a break
+            yield return _waitLoop;
+        }
+
+        if (_chasing == null)
+            _shouldSearch = true;
     }
 }
