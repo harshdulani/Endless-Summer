@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 public class WallController : MonoBehaviour
@@ -32,7 +31,7 @@ public class WallController : MonoBehaviour
 
     public void Repair(float amt)
     {
-        if(_myStats.health > 1f) return;
+        if(_myStats.health > 100f) return;
         
         _myStats.health += amt;
         
@@ -48,8 +47,8 @@ public class WallController : MonoBehaviour
 
     private void Phoenix()
     {
-        var y = Instantiate(_myStats.isBroken ? brokenBox : normalBox, transform.position, Quaternion.identity);
-        Debug.Log("phoenix " + y.name, y);
+        var newWall = Instantiate(_myStats.isBroken ? brokenBox : normalBox, transform.position, Quaternion.identity);
+        newWall.transform.parent = transform.parent;
         Destroy(gameObject);
     }
 }

@@ -1,18 +1,68 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class GameController : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public static GameController game;
+    public static int score;
+
+    public bool hasGameStarted;
+    
+    [Header("Spawning")] 
+    public GameObject enemyPrefab;
+    public List<Transform> spawnPoints;
+    
+    public int enemiesOnScreen, maxEnemiesOnScreen;
+    public float enemySpawnInterval;
+    
+    private bool _shouldSpawn;
+
+    private WaitForSeconds _spawnWait;
+
+    private void Awake()
     {
-        
+        if (!game)
+            game = this;
+        else
+            Destroy(this);
+    }
+    
+    private void Start()
+    {
+        _spawnWait = new WaitForSeconds(enemySpawnInterval);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void StartGameplay()
     {
+        _shouldSpawn = true;
+        hasGameStarted = true;
+        StartCoroutine(SpawnEnemies());
         
+        foreach (var light in FindObjectsOfType<DayNightCycle>())
+        {
+            light.StartAnimations();
+        }
+    }
+
+    private IEnumerator SpawnEnemies()
+    {
+        while (_shouldSpawn)
+        {
+            if (enemiesOnScreen < maxEnemiesOnScreen)
+                SpawnEnemy();
+            
+            yield return _spawnWait;
+        }
+    }
+
+    private void SpawnEnemy()
+    {
+        var index = Random.Range(0, spawnPoints.Count);
+        var x = Instantiate(enemyPrefab,  spawnPoints[index].position, Quaternion.identity);
+        x.GetComponent<EnemyStats>().spawnPointIndex = index;
+
+        enemiesOnScreen++;
     }
 }

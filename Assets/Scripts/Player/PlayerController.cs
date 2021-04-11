@@ -44,9 +44,10 @@ public class PlayerController : MonoBehaviour
 
     private void Update()
     {
+        if(!GameController.game.hasGameStarted) return;
+        
         if (LitmusTest.Paper.litDay && DayNightCycle.isDayActiveLight)
         {
-            //calculate damage per sec based on distance from sun
             //print("hit by sun");
             ChangeHealth(PlayerStats.stats.takeDPS);
         }
@@ -65,6 +66,8 @@ public class PlayerController : MonoBehaviour
         {
             if (!ReferenceEquals(_hitTrans, null))
             {
+                line.material = line.materials[_isRepairing ? 1 : 0];
+                
                 if (_elapsedTimefromHitting <= giveDamageInterval)
                 {
                     line.enabled = true;
@@ -132,6 +135,8 @@ public class PlayerController : MonoBehaviour
         if (PlayerStats.stats.health > 0f) return;
         
         _agent.isStopped = true;
+        
+        MainMenuController.menu.ShowGameOver();
         Destroy(gameObject, 0.75f);
     }
 
@@ -157,15 +162,23 @@ public class PlayerController : MonoBehaviour
         
         Physics.Raycast(new Ray(transform.position, transform.forward), out _hit, 10f, _wallMask);
 
-        if(ReferenceEquals(_hit.collider.gameObject, null)) return;
-        
-        var x = _hit.collider.gameObject;
-        Debug.Log(x.name, x);
-        if(x.CompareTag("Wall"))
+        try
         {
-            x.GetComponent<WallController>().Repair(PlayerStats.stats.repairHitPoints);
+            var x = _hit.collider.gameObject;
+            if (ReferenceEquals(x, null)) return;
+
+            if (x.CompareTag("Wall"))
+            {
+                x.GetComponent<WallController>().Repair(PlayerStats.stats.repairHitPoints);
+                _hitTrans = x.transform;
+            }
+
+            _elapsedTimefromHitting = 0f;
         }
-        _elapsedTimefromHitting = 0f;
+        catch
+        {
+            print("didnt find box to repair");
+        }
     }
     
     private void Rotate(Vector3 position)
