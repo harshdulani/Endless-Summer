@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -11,17 +10,22 @@ public class EnemyController : MonoBehaviour
     
     private Vector3 _chasePos = Vector3.zero;
     private bool _shouldSearch, _isAttacking;
-    
+
+    private Animator _anim;
     private NavMeshAgent _agent;
     private EnemyStats _myStats;
     private HealthCanvasController _healthCanvas;
 
     private WaitForSeconds _waitLoop = new WaitForSeconds(0.01f);
-    
+    private static readonly int Speed = Animator.StringToHash("speed");
+    private static readonly int Attack1 = Animator.StringToHash("attack");
+    private static readonly int Death = Animator.StringToHash("death");
+
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
         _myStats = GetComponent<EnemyStats>();
+        _anim = GetComponent<Animator>();
         
         _healthCanvas = GetComponentInChildren<HealthCanvasController>();
 
@@ -34,6 +38,8 @@ public class EnemyController : MonoBehaviour
         {
             StartCoroutine(FindWall());
         }
+
+        _anim.SetFloat(Speed, _agent.velocity.sqrMagnitude);
     }
 
     private void OnCollisionEnter(Collision other)
@@ -53,7 +59,10 @@ public class EnemyController : MonoBehaviour
             if(_chasing != null)
             {
                 if (_chasing.GetComponent<WallController>().TakeDamage(_myStats.hitPoints) > 0)
+                {
+                    _anim.SetTrigger(Attack1);
                     yield return new WaitForSeconds(giveHitInterval);
+                }
                 else
                     _isAttacking = false;
             }
@@ -75,7 +84,8 @@ public class EnemyController : MonoBehaviour
         if (_myStats.health > 0f) return _myStats.health;
         
         _agent.isStopped = true;
-        Destroy(gameObject, 0.25f);
+        _anim.SetTrigger(Death);
+        Destroy(gameObject, 1f);
         return _myStats.health;
     }
     

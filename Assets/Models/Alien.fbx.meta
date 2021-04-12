@@ -45,7 +45,32 @@ ModelImporter:
   - first:
       74: -4958987027140079365
     second: AlienArmature|Alien_Walk
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Eyes
+    second: {fileID: 2100000, guid: 41c8cd40630016e4e9dc7e16019855a3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Main
+    second: {fileID: 2100000, guid: 1aee5bca43405774b8ca3ee53a011cb0, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Nails
+    second: {fileID: 2100000, guid: b11c359310312634bac3cdc2d0d63471, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Stripe
+    second: {fileID: 2100000, guid: 70831d891e7dd6d46b73ece562759ba7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: White
+    second: {fileID: 2100000, guid: 90f976c491980a7439196baa89e82560, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

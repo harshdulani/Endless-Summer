@@ -60,7 +60,9 @@ public class GameController : MonoBehaviour
     private void SpawnEnemy()
     {
         var index = Random.Range(0, spawnPoints.Count);
-        var x = Instantiate(enemyPrefab,  spawnPoints[index].position, Quaternion.identity);
+        var pos = spawnPoints[index].position;
+        pos.y = 0.125f;
+        var x = Instantiate(enemyPrefab, pos, Quaternion.identity);
         x.GetComponent<EnemyStats>().spawnPointIndex = index;
 
         enemiesOnScreen++;

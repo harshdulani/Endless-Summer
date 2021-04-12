@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour
     private LineRenderer _lineLeft, _lineRight;
     private Transform _hitTrans = null;
 
+    private Animator _anim;
     private HealthCanvasController _healthCanvas;
     private NavMeshAgent _agent;
     private Ray _ray;
@@ -25,6 +26,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 _desiredMovementDirection;
     private bool _rotatingToPosition, _isRepairing;
     private int _enemyMask, _wallMask;
+    private static readonly int Death = Animator.StringToHash("death");
+    private static readonly int Speed = Animator.StringToHash("speed");
 
     private void Awake()
     {
@@ -37,6 +40,7 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
+        _anim = GetComponent<Animator>();
         _healthCanvas = GetComponentInChildren<HealthCanvasController>();
         _cam = Camera.main;
 
@@ -67,28 +71,25 @@ public class PlayerController : MonoBehaviour
             ToggleAttackRepair();
         }
 
-        try
+        if (_hitTrans != null)
         {
-            if (_hitTrans != null)
+            if (_elapsedTimefromHitting <= giveDamageInterval)
             {
-                if (_elapsedTimefromHitting <= giveDamageInterval)
-                {
-                    _lineLeft.enabled = true;
-                    _lineLeft.positionCount = 2;
-                    _lineLeft.SetPosition(0, _lineLeft.transform.position);
-                    _lineLeft.SetPosition(1, _hitTrans.position);
-                    
-                    _lineRight.enabled = true;
-                    _lineRight.positionCount = 2;
-                    _lineRight.SetPosition(0, _lineRight.transform.position);
-                    _lineRight.SetPosition(1, _hitTrans.position);
-                    _position = _hitTrans.position;
-                    
-                    _rotatingToPosition = true;
-                }
+                _lineLeft.enabled = true;
+                _lineLeft.positionCount = 2;
+                _lineLeft.SetPosition(0, _lineLeft.transform.position);
+                _lineLeft.SetPosition(1, _hitTrans.position);
+                
+                _lineRight.enabled = true;
+                _lineRight.positionCount = 2;
+                _lineRight.SetPosition(0, _lineRight.transform.position);
+                _lineRight.SetPosition(1, _hitTrans.position);
+                _position = _hitTrans.position;
+                
+                _rotatingToPosition = true;
             }
         }
-        catch (Exception e)
+        else
         {
             _lineLeft.enabled = false;
             _lineRight.enabled = false;
@@ -158,6 +159,8 @@ public class PlayerController : MonoBehaviour
         {
             Rotate(_position);
         }
+        
+        _anim.SetFloat(Speed, _agent.velocity.sqrMagnitude);
     }
 
     private void Attack()
@@ -287,8 +290,8 @@ public class PlayerController : MonoBehaviour
         
         _agent.isStopped = true;
         
+        _anim.SetTrigger(Death);
         MainMenuController.menu.ShowGameOver();
-        Destroy(gameObject, 0.75f);
     }
     
     private void Rotate(Vector3 position)
